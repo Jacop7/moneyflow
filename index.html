@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>머니무브랩 - 섹터 자금 흐름 분석</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f7f8fa;
+    --bg-card: #ffffff;
+    --text-primary: #1a1a2e;
+    --text-secondary: #5a5a72;
+    --text-tertiary: #8e8ea0;
+    --border: #e8e8ee;
+    --accent: #4f46e5;
+    --accent-light: #eef2ff;
+    --accent-hover: #4338ca;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --green: #10b981;
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { background: #f7f8fa; }
+  body {
+    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f7f8fa; color: var(--text-primary); line-height: 1.6;
+    -webkit-font-smoothing: antialiased; color-scheme: light;
+  }
+  header { background: #ffffff; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+  .header-inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-weight: 800; font-size: 20px; color: var(--accent); letter-spacing: -0.5px; text-decoration: none; display: flex; align-items: center; gap: 2px; }
+  .logo span { background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; }
+  nav { display: flex; align-items: center; gap: 32px; }
+  nav a { text-decoration: none; color: var(--text-secondary); font-weight: 500; font-size: 15px; transition: color 0.2s; position: relative; }
+  nav a:hover, nav a.active { color: var(--text-primary); }
+  nav a.active::after { content: ''; position: absolute; bottom: -20px; left: 0; right: 0; height: 2px; background: var(--accent); border-radius: 2px; }
+  .login-btn { background: var(--accent); color: #fff !important; padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; transition: background 0.2s; }
+  .login-btn:hover { background: var(--accent-hover); }
+  .mobile-menu-btn { display: none; background: none; border: none; color: var(--text-primary); cursor: pointer; padding: 4px; }
+  .top-filters { background: #ffffff; border-bottom: 1px solid var(--border); display: none; }
+  .top-filters-inner { max-width: 1200px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .mobile-sub-menu { display: none; overflow-x: auto; white-space: nowrap; gap: 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex: 1; min-width: 0; }
+  .mobile-sub-menu::-webkit-scrollbar { display: none; }
+  .cat-tab { white-space: nowrap; padding: 7px 20px; border-radius: 20px; font-size: 13.5px; font-weight: 500; color: var(--text-secondary); background: var(--bg); border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; text-decoration: none; }
+  .cat-tab:hover { background: var(--accent-light); color: var(--accent); }
+  .cat-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .left-nav { position: sticky; top: 80px; align-self: start; display: flex; flex-direction: column; gap: 4px; min-width: 160px; padding-top: 4px; }
+  .left-nav-item { display: block; padding: 10px 16px; font-size: 14px; font-weight: 500; color: var(--text-secondary); text-decoration: none; border-radius: var(--radius-sm); transition: all 0.2s; }
+  .left-nav-item:hover { background: var(--accent-light); color: var(--accent); }
+  .left-nav-item.active { font-weight: 700; color: var(--text-primary); background: transparent; }
+  .period-tabs-wrap { display: flex; justify-content: flex-end; }
+  .period-tabs { display: flex; gap: 0; background: #ffffff; border: 1.5px solid var(--border); border-radius: 24px; padding: 3px; flex-shrink: 0; }
+  .period-tab { padding: 7px 18px; font-size: 13px; font-weight: 600; color: var(--text-tertiary); border-radius: 20px; cursor: pointer; transition: all 0.2s; border: none; background: none; font-family: inherit; white-space: nowrap; }
+  .period-tab:hover { color: var(--text-secondary); }
+  .period-tab.active { background: var(--accent); color: #fff; }
+  .main-wrap { max-width: 1200px; margin: 0 auto; padding: 28px 24px; display: grid; grid-template-columns: 160px 1fr; gap: 32px; background: var(--bg-secondary); min-height: 100vh; }
+  .content-col { display: flex; flex-direction: column; gap: 20px; max-width: 100%; min-width: 0; background: var(--bg-secondary); }
+  .article-list { display: flex; flex-direction: column; gap: 16px; }
+  .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .list-header h2 { font-size: 18px; font-weight: 700; }
+  .list-header .count { font-size: 13px; color: var(--text-tertiary); font-weight: 400; margin-left: 8px; }
+  .sort-select { padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--text-secondary); background: var(--bg); cursor: pointer; font-family: inherit; }
+  .article-card { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); padding: 24px; display: flex; gap: 20px; cursor: pointer; transition: all 0.25s ease; text-decoration: none; color: inherit; }
+  .article-card:hover { box-shadow: var(--shadow-md); border-color: #d0d0dd; transform: translateY(-1px); }
+  .article-content { flex: 1; min-width: 0; }
+  .article-tags { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .article-tag { font-size: 12px; font-weight: 500; color: var(--accent); background: var(--accent-light); padding: 3px 10px; border-radius: 12px; }
+  .article-title { font-size: 17px; font-weight: 700; line-height: 1.45; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .article-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 14px; }
+  .article-meta { display: flex; align-items: center; gap: 10px; }
+  .author-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-light), #c7d2fe); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+  .author-name { font-size: 13px; font-weight: 600; }
+  .meta-dot { color: var(--text-tertiary); font-size: 12px; }
+  .meta-time, .meta-role { font-size: 12px; color: var(--text-tertiary); }
+  .article-thumb { width: 140px; height: 100px; border-radius: var(--radius-sm); background: linear-gradient(135deg, #e0e7ff, #f0f1f5, #dbeafe); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+  .sidebar-card { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); padding: 24px; }
+  .sidebar-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .sidebar-title .icon { font-size: 18px; }
+  .hot-list { display: flex; flex-direction: column; }
+  .hot-item-wrap { margin: 0 -24px; border-bottom: 1px solid var(--border); }
+  .hot-item-wrap:last-child { border-bottom: none; }
+  .hot-item { display: flex; align-items: center; gap: 12px; padding: 14px 24px 6px 24px; text-decoration: none; color: inherit; }
+  .hot-rank { font-size: 17px; font-weight: 800; min-width: 22px; text-align: center; color: var(--text-primary); line-height: 1; }
+  .hot-sector { font-size: 17px; font-weight: 700; color: var(--text-primary); }
+  .hot-news { padding: 4px 24px 6px 58px; font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+  .hot-companies { padding: 2px 24px 14px 58px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .hot-company { font-size: 12px; font-weight: 500; color: var(--accent); background: var(--accent-light); padding: 3px 10px; border-radius: 12px; white-space: nowrap; }
+  .next-list { display: flex; flex-direction: column; }
+  .next-item { margin: 0 -24px; padding: 14px 24px; border-bottom: 1px solid var(--border); }
+  .next-item:last-child { border-bottom: none; }
+  .next-sector-name { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+  .next-reason { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 10px; }
+  .next-companies { display: flex; gap: 6px; flex-wrap: wrap; }
+  .next-company { font-size: 12px; font-weight: 500; color: var(--accent); background: var(--accent-light); padding: 3px 10px; border-radius: 12px; white-space: nowrap; }
+  .flow-pager { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+  .flow-pager-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 0; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+  .flow-pager-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .flow-pager-btn .page-indicator { font-size: 12px; color: var(--text-tertiary); font-weight: 500; }
+  .flow-pager-btn:hover .page-indicator { color: var(--accent); }
+  .flow-refresh-btn { width: 38px; height: 38px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-tertiary); font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+  .flow-refresh-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .flow-refresh-btn.spinning svg { animation: spin 0.6s ease; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .banner { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a855f7 100%); border-radius: var(--radius); padding: 36px 32px; color: #fff; text-align: center; margin-bottom: 16px; position: relative; overflow: hidden; transition: opacity 0.4s ease; background-size: cover; background-position: center; min-height: 120px; display: flex; flex-direction: column; justify-content: center; }
+  .banner h3 { font-size: 17px; font-weight: 600; margin-bottom: 10px; line-height: 1.7; text-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+  .banner p { font-size: 13px; opacity: 0.85; text-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+  .load-more { text-align: center; padding: 20px; }
+  .load-more-btn { padding: 12px 40px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--bg); color: var(--text-secondary); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+  .load-more-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  footer { background: #ffffff; border-top: 1px solid var(--border); padding: 40px 24px; text-align: center; }
+  .footer-inner { max-width: 1200px; margin: 0 auto; }
+  .footer-logo { font-weight: 800; font-size: 18px; color: var(--accent); margin-bottom: 8px; }
+  .footer-desc { font-size: 13px; color: var(--text-tertiary); margin-bottom: 16px; }
+  .footer-links { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+  .footer-links a { font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--accent); }
+  @media (max-width: 900px) {
+    .left-nav { display: none; }
+    .top-filters { display: block; }
+    .mobile-sub-menu { display: flex; }
+    .main-wrap { grid-template-columns: 1fr; padding: 20px 24px; }
+    .period-tabs-wrap { justify-content: flex-start; }
+  }
+  @media (max-width: 600px) {
+    .header-inner { padding: 0 16px; }
+    nav { gap: 16px; }
+    .login-btn { display: none; }
+    .mobile-menu-btn { display: block; }
+    nav a { font-size: 14px; }
+    .top-filters-inner { padding: 10px 16px; }
+    .main-wrap { padding: 16px; gap: 16px; }
+    .article-card { padding: 16px; flex-direction: column; }
+    .article-thumb { width: 100%; height: 160px; }
+  }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .article-card { animation: fadeUp 0.4s ease both; }
+  .article-card:nth-child(1) { animation-delay: 0.02s; }
+  .article-card:nth-child(2) { animation-delay: 0.06s; }
+  .article-card:nth-child(3) { animation-delay: 0.10s; }
+  .article-card:nth-child(4) { animation-delay: 0.14s; }
+  .article-card:nth-child(5) { animation-delay: 0.18s; }
+  .article-card:nth-child(6) { animation-delay: 0.22s; }
+  .article-card:nth-child(7) { animation-delay: 0.26s; }
+  .article-card:nth-child(8) { animation-delay: 0.30s; }
+  .sidebar-card { animation: fadeUp 0.5s ease both; animation-delay: 0.1s; }
+  @keyframes flowSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="logo" href="#">머니무브<span>랩</span></a>
+    <nav>
+      <a href="#" class="active">머니무브</a>
+      <a href="#">이슈체크</a>
+      <a href="#">섹터 랭킹</a>
+      <a href="#" class="login-btn">로그인</a>
+      <button class="mobile-menu-btn" aria-label="메뉴">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<div class="top-filters">
+  <div class="top-filters-inner">
+    <div class="mobile-sub-menu">
+      <a class="cat-tab active" href="#" data-section="all">전체보기</a>
+      <a class="cat-tab" href="#" data-section="sector-trend">섹터 트렌드</a>
+      <a class="cat-tab" href="#" data-section="signal">시그널 감지</a>
+    </div>
+  </div>
+</div>
+
+<div class="main-wrap">
+  <aside class="left-nav">
+    <a class="left-nav-item active" href="#" data-section="all">전체보기</a>
+    <a class="left-nav-item" href="#" data-section="sector-trend">섹터 트렌드</a>
+    <a class="left-nav-item" href="#" data-section="signal">시그널 감지</a>
+  </aside>
+
+  <div class="content-col">
+    <div class="period-tabs-wrap">
+      <div class="period-tabs">
+        <button class="period-tab active" data-period="today">오늘</button>
+        <button class="period-tab" data-period="week">1주</button>
+        <button class="period-tab" data-period="month">1개월</button>
+        <button class="period-tab" data-period="3month">3개월</button>
+      </div>
+    </div>
+
+    <!-- SECTOR TREND -->
+    <div class="sidebar-card" id="section-sector-trend">
+      <h3 class="sidebar-title"><span class="icon">⚡</span> 섹터 트렌드</h3>
+      <div class="hot-list" id="hotList"></div>
+      <div class="flow-pager">
+        <button class="flow-pager-btn" id="hotPagerBtn"><span>더보기</span><span class="page-indicator" id="hotPageIndicator">1 / 3</span></button>
+        <button class="flow-refresh-btn" id="hotRefreshBtn" title="새로고침"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></button>
+      </div>
+    </div>
+
+    <!-- SIGNAL -->
+    <div class="sidebar-card" id="section-signal">
+      <h3 class="sidebar-title"><span class="icon">🔍</span> 시그널 감지</h3>
+      <div class="next-list" id="nextList"></div>
+      <div class="flow-pager" style="margin-top:14px">
+        <button class="flow-pager-btn" id="nextPagerBtn"><span>더보기</span><span class="page-indicator" id="nextPageIndicator">1 / 3</span></button>
+        <button class="flow-refresh-btn" id="nextRefreshBtn" title="새로고침"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg></button>
+      </div>
+    </div>
+
+    <!-- QUOTE BANNER -->
+    <div class="banner" id="quoteBanner">
+      <h3 id="quoteText">"주식시장은 인내심 없는 자의 돈을 인내심 있는 자에게 옮긴다"</h3>
+      <p id="quoteAuthor">— 워런 버핏</p>
+    </div>
+
+    <!-- ARTICLE LIST -->
+    <div class="list-header">
+      <h2>전체보기 <span class="count">15,315</span></h2>
+      <select class="sort-select"><option>최신순</option><option>조회수 높은순</option></select>
+    </div>
+
+    <div class="article-list">
+      <a class="article-card" href="#">
+        <div class="article-content">
+          <div class="article-tags"><span class="article-tag">프로덕트</span><span class="article-tag">마인드셋</span><span class="article-tag">커리어</span></div>
+          <h3 class="article-title">모두가 죽는 2000년 닷컴버블, 아마존만 살아남은 단 하나의 이유</h3>
+          <p class="article-desc">제프 베조스가 폭락장에서 마주한 무게 — 단기적으로 시장은 주식차트지만, 장기적으로는 저울이다...</p>
+          <div class="article-meta"><div class="author-avatar">정</div><span class="author-name">정하민</span><span class="meta-dot">·</span><span class="meta-role">CEO</span><span class="meta-dot">·</span><span class="meta-time">약 1시간 전</span></div>
+        </div>
+        <div class="article-thumb">📈</div>
+      </a>
+      <a class="article-card" href="#">
+        <div class="article-content">
+          <div class="article-tags"><span class="article-tag">아이템 선정</span><span class="article-tag">MVP검증</span></div>
+          <h3 class="article-title">0에서 시작해서 AI로 첫 서비스를 만들기까지</h3>
+          <p class="article-desc">나는 디자인에 일자무식이다. AI 시대에 누구든 만들 수 있다...</p>
+          <div class="article-meta"><div class="author-avatar">카</div><span class="author-name">카마</span><span class="meta-dot">·</span><span class="meta-role">콘텐츠 마케터</span><span class="meta-dot">·</span><span class="meta-time">약 11시간 전</span></div>
+        </div>
+        <div class="article-thumb">🚀</div>
+      </a>
+      <a class="article-card" href="#">
+        <div class="article-content">
+          <div class="article-tags"><span class="article-tag">사업전략</span><span class="article-tag">트렌드</span></div>
+          <h3 class="article-title">AI Agent 최전선의 영어 교육은, Aleph Lab 이야기</h3>
+          <p class="article-desc">Y Combinator Fall 25 배치에 투자를 유치한 Aleph Lab의 모든 것...</p>
+          <div class="article-meta"><div class="author-avatar">삐</div><span class="author-name">삐아스</span><span class="meta-dot">·</span><span class="meta-role">콘텐츠 크리에이터</span><span class="meta-dot">·</span><span class="meta-time">약 12시간 전</span></div>
+        </div>
+        <div class="article-thumb">🤖</div>
+      </a>
+      <a class="article-card" href="#">
+        <div class="article-content">
+          <div class="article-tags"><span class="article-tag">프로덕트</span><span class="article-tag">커리어</span></div>
+          <h3 class="article-title">저는 '엉망인 코드'를 들고 개발자를 찾아갑니다</h3>
+          <p class="article-desc">요즘은 엉성하더라도 AI로 짠 '돌아가는 코드'를 먼저 들고 갑니다...</p>
+          <div class="article-meta"><div class="author-avatar">채</div><span class="author-name">채원</span><span class="meta-dot">·</span><span class="meta-role">Product Owner</span><span class="meta-dot">·</span><span class="meta-time">약 15시간 전</span></div>
+        </div>
+        <div class="article-thumb">💻</div>
+      </a>
+      <a class="article-card" href="#">
+        <div class="article-content">
+          <div class="article-tags"><span class="article-tag">마케팅</span><span class="article-tag">운영</span></div>
+          <h3 class="article-title">실험하는 조직이 빠르게 성장하는 법: AB TEST (1)</h3>
+          <p class="article-desc">혁신의 핵심은 실패를 수용하는 능력에 있다...</p>
+          <div class="article-meta"><div class="author-avatar">위</div><span class="author-name">위그로스 Wegrowth®</span><span class="meta-dot">·</span><span class="meta-time">약 16시간 전</span></div>
+        </div>
+        <div class="article-thumb">🧪</div>
+      </a>
+      <a class="article-card" href="#">
+        <div class="article-content">
+          <div class="article-tags"><span class="article-tag">마케팅</span><span class="article-tag">사업전략</span></div>
+          <h3 class="article-title">[B2B 마케터를 위한 GEO 인사이트] 잘나가는 경쟁사 GEO에 '무임승차'하는 방법</h3>
+          <p class="article-desc">디지털 마케팅의 패러다임이 SEO를 넘어 GEO로 전환되고 있습니다...</p>
+          <div class="article-meta"><div class="author-avatar">오</div><span class="author-name">오지훈</span><span class="meta-dot">·</span><span class="meta-role">CEO</span><span class="meta-dot">·</span><span class="meta-time">약 16시간 전</span></div>
+        </div>
+        <div class="article-thumb">📊</div>
+      </a>
+      <a class="article-card" href="#">
+        <div class="article-content">
+          <div class="article-tags"><span class="article-tag">마인드셋</span><span class="article-tag">커리어</span></div>
+          <h3 class="article-title">대기업 11년 다니던 그가 창업을 권하는 이유</h3>
+          <p class="article-desc">모키보 조은형 대표는 대기업을 11년간 다니고 퇴사해 창업한 이야기를 전합니다...</p>
+          <div class="article-meta"><div class="author-avatar">와</div><span class="author-name">와디즈</span><span class="meta-dot">·</span><span class="meta-role">에디터</span><span class="meta-dot">·</span><span class="meta-time">약 16시간 전</span></div>
+        </div>
+        <div class="article-thumb">🏢</div>
+      </a>
+      <a class="article-card" href="#">
+        <div class="article-content">
+          <div class="article-tags"><span class="article-tag">MVP검증</span><span class="article-tag">사업전략</span></div>
+          <h3 class="article-title">생각보다 고객은, 너무 과한 혁신을 원치 않는다는 사실</h3>
+          <p class="article-desc">기존 솔루션에서 뭐가 망가져 있는지 연구해서 해결할 가치 있는 진짜 문제를 찾으세요...</p>
+          <div class="article-meta"><div class="author-avatar">L</div><span class="author-name">leanX</span><span class="meta-dot">·</span><span class="meta-role">CEO</span><span class="meta-dot">·</span><span class="meta-time">약 19시간 전</span></div>
+        </div>
+        <div class="article-thumb">💡</div>
+      </a>
+    </div>
+
+    <div class="load-more"><button class="load-more-btn">아티클 더보기</button></div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">머니무브랩</div>
+    <p class="footer-desc">섹터 자금 흐름 분석 플랫폼</p>
+    <div class="footer-links">
+      <a href="#">머니무브</a><a href="#">이슈체크</a><a href="#">섹터 랭킹</a><a href="#">이용약관</a><a href="#">개인정보처리방침</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const hotData = {
+    today: [
+      { sector: '휴머노이드 액추에이터', news: '테슬라 옵티머스 2세대 양산 로드맵 공개', companies: ['삼성전자', '로보티즈', '두산로보틱스'] },
+      { sector: 'CPO 광반도체', news: "2026년 'CPO 광반도체' 본격 상용화...엔비디아 채택 확대", companies: ['엔비디아', 'TSMC', '브로드컴'] },
+      { sector: 'AI 추론칩', news: '엔비디아 B300 추론 특화칩 벤치마크 공개', companies: ['엔비디아', 'AMD', '삼성전자'] },
+      { sector: '소형모듈원전(SMR)', news: '한수원 SMR 해외 수출 MOU 3건 체결', companies: ['두산에너빌리티', '한전기술', 'BWX'] },
+      { sector: '저궤도 위성통신', news: '스페이스X 스타링크 V3 발사 성공', companies: ['한화시스템', 'AP위성', '쎄트렉아이'] },
+      { sector: 'AI 에이전트 SaaS', news: '마이크로소프트 코파일럿 기업 도입 200% 증가', companies: ['마이크로소프트', '세일즈포스', '업스테이지'] },
+      { sector: '차세대 배터리(전고체)', news: '삼성SDI 전고체 파일럿 라인 가동 시작', companies: ['삼성SDI', '솔리드파워', '퀀텀스케이프'] },
+      { sector: '온디바이스 AI', news: '애플 M5칩 온디바이스 LLM 탑재 확정', companies: ['애플', '퀄컴', '미디어텍'] },
+      { sector: '합성생물학', news: '모더나 mRNA 기반 항암제 임상 3상 진입', companies: ['모더나', '삼성바이오', '셀트리온'] },
+    ],
+    week: [
+      { sector: 'AI 데이터센터 냉각', news: '리퀴드쿨링 시장 2026년 전년비 85% 성장 전망', companies: ['버티브', '슈나이더', '고려아연'] },
+      { sector: 'HBM4', news: 'SK하이닉스 HBM4 샘플 출하, 엔비디아 검증 돌입', companies: ['SK하이닉스', '삼성전자', '마이크론'] },
+      { sector: 'K-방산 수출', news: '폴란드 K2 전차 2차 계약 서명 완료', companies: ['한화에어로', '현대로템', 'LIG넥스원'] },
+      { sector: '전력 인프라', news: '한전 송배전망 5조 투자 계획 발표', companies: ['한전', 'LS일렉트릭', '효성중공업'] },
+      { sector: '자율주행 L4', news: '웨이모 서울 시범 운행 허가 취득', companies: ['웨이모', '모빌아이', '현대차'] },
+      { sector: '로봇 파운데이션 모델', news: '구글 RT-3 로봇 범용 AI 모델 공개', companies: ['구글', '오픈AI', '피규어AI'] },
+      { sector: '우주 발사체', news: '누리호 4차 발사 성공, 상업 위성 궤도 투입', companies: ['한화에어로', '이노스페이스', 'AP위성'] },
+      { sector: '디지털 트윈', news: '엔비디아 옴니버스 제조업 적용 사례 급증', companies: ['엔비디아', '지멘스', '두산'] },
+      { sector: 'AI 의료영상', news: 'FDA AI 의료기기 승인 건수 역대 최다', companies: ['뷰노', '루닛', '인튜이티브'] },
+    ],
+    month: [
+      { sector: '양자컴퓨팅', news: 'IBM 1000큐비트 칩 상용화 일정 앞당겨', companies: ['IBM', '구글', 'IonQ'] },
+      { sector: '탄소포집(CCUS)', news: 'EU 탄소국경세 시행, CCUS 투자 급증', companies: ['클라임웍스', '옥시덴탈', 'SK이노'] },
+      { sector: '엣지 AI 칩', news: '퀄컴 스냅드래곤 X 엣지 AI 칩 벤치마크 1위', companies: ['퀄컴', '미디어텍', '르네사스'] },
+      { sector: '바이오 CDMO', news: '삼성바이오 4공장 가동률 95% 돌파', companies: ['삼성바이오', '론자', 'WuXi'] },
+      { sector: '차세대 디스플레이', news: '삼성 마이크로LED TV 양산 시작', companies: ['삼성전자', 'LG디스플레이', 'BOE'] },
+      { sector: '수소 모빌리티', news: '현대차 수소전기트럭 유럽 1000대 수주', companies: ['현대차', '두산퓨얼셀', '플러그파워'] },
+      { sector: '사이버 보안 AI', news: 'AI 기반 사이버 공격 급증, 보안 투자 확대', companies: ['팔로알토', '크라우드스트라이크', '안랩'] },
+      { sector: '스마트팜', news: '농진청 AI 스마트팜 전국 확대 사업 발표', companies: ['그린랩스', '팜에이트', '엔씽'] },
+      { sector: '풍력 해상', news: '신안 해상풍력단지 8.2GW 착공 승인', companies: ['두산에너빌리티', 'SK에코', '씨에스윈드'] },
+    ],
+    '3month': [
+      { sector: '범용 AI(AGI)', news: '오픈AI o3 모델 추론 능력 인간 수준 근접', companies: ['오픈AI', '앤트로픽', '구글'] },
+      { sector: '뇌-컴퓨터 인터페이스', news: '뉴럴링크 2차 인체 임상 FDA 승인', companies: ['뉴럴링크', '블랙록뉴로', '싱크론'] },
+      { sector: '핵융합 에너지', news: 'CFS 스파크 장치 플라즈마 달성 발표', companies: ['CFS', 'TAE', 'KFE'] },
+      { sector: 'AI 반도체 패키징', news: 'TSMC CoWoS 생산능력 2배 증설 완료', companies: ['TSMC', 'SK하이닉스', '한미반도체'] },
+      { sector: '에어택시(UAM)', news: '조비에비에이션 FAA 형식 인증 최종 단계', companies: ['조비', '현대차', '한화시스템'] },
+      { sector: '합성 데이터', news: 'AI 학습 데이터 부족, 합성 데이터 시장 폭발', companies: ['스케일AI', 'Gretel', 'AIMMO'] },
+      { sector: '초전도체', news: 'LK-99 후속 연구 초전도 현상 재현 보고', companies: ['퀀텀에너지', '서남', '한국전기연'] },
+      { sector: '디지털 헬스케어', news: '삼성헬스 AI 진단 보조 기능 FDA 510k 승인', companies: ['삼성전자', '필립스', '메드트로닉'] },
+      { sector: '위성항법(PNT)', news: '한국형 위성항법 KPS 1호기 발사 성공', companies: ['한화시스템', 'LIG넥스원', '쎄트렉아이'] },
+    ]
+  };
+
+  const nextData = [
+    { sector: 'AI 전력반도체(GaN)', reason: 'AI 서버 전력효율 이슈 부각, GaN 전력반도체 수요 급증 전망', companies: ['이녹스첨단소재', '파워로직스', 'DB하이텍'] },
+    { sector: '온디바이스 AI NPU', reason: '애플 M5 + 삼성 엑시노스 NPU 강화, 모바일 AI 추론 칩 수요 확대', companies: ['리벨리온', '사피온', 'LX세미콘'] },
+    { sector: '리퀴드쿨링(액침냉각)', reason: 'AI 데이터센터 발열 한계 도달, MS/구글 액침냉각 전면 도입 발표', companies: ['고려아연', '한온시스템', '아모그린텍'] },
+    { sector: '로봇 감속기', reason: '중국 휴머노이드 양산 시작, 핵심 부품 감속기 공급 부족 전망', companies: ['에스비비테크', '세진산업', '나부테스코'] },
+    { sector: '2나노 소부장', reason: '삼성 2나노 GAA 양산 로드맵 확정, 장비·소재주 거래량 동반 급증', companies: ['하나마이크론', '이오테크닉스', '피에스케이', '주성엔지니어링'] },
+    { sector: '휴머노이드 카메라모듈', reason: '테슬라 옵티머스 비전 센서 공급사 다변화, 국내 업체 수주 기대', companies: ['엠씨넥스', '파트론', '세코닉스'] },
+  ];
+
+  let currentPeriod = 'today';
+  let hotPage = 0;
+  let nextPage = 0;
+  const PAGE_SIZE = 3;
+
+  function renderHotPage() {
+    const data = hotData[currentPeriod];
+    const totalPages = Math.ceil(data.length / PAGE_SIZE);
+    const start = hotPage * PAGE_SIZE;
+    const pageItems = data.slice(start, start + PAGE_SIZE);
+    document.getElementById('hotList').innerHTML = pageItems.map((item, i) => {
+      const rank = start + i + 1;
+      return `<div class="hot-item-wrap" style="animation:flowSlide .3s ease both;animation-delay:${i*.06}s"><div class="hot-item"><span class="hot-rank">${rank}</span><span class="hot-sector">${item.sector}</span></div><div class="hot-news">${item.news}</div><div class="hot-companies">${item.companies.map(c=>`<span class="hot-company">${c}</span>`).join('')}</div></div>`;
+    }).join('');
+    document.getElementById('hotPageIndicator').textContent = `${hotPage+1} / ${totalPages}`;
+  }
+
+  function renderNextPage() {
+    const totalPages = Math.ceil(nextData.length / PAGE_SIZE);
+    if (nextPage >= totalPages) nextPage = 0;
+    const start = nextPage * PAGE_SIZE;
+    const pageItems = nextData.slice(start, start + PAGE_SIZE);
+    document.getElementById('nextList').innerHTML = pageItems.map((item, i) => `<div class="next-item" style="animation:flowSlide .3s ease both;animation-delay:${i*.06}s"><div class="next-sector-name">${item.sector}</div><div class="next-reason">${item.reason}</div><div class="next-companies">${item.companies.map(c=>`<span class="next-company">${c}</span>`).join('')}</div></div>`).join('');
+    document.getElementById('nextPageIndicator').textContent = `${nextPage+1} / ${totalPages}`;
+  }
+
+  function renderAll() { renderHotPage(); renderNextPage(); }
+
+  document.getElementById('hotPagerBtn').addEventListener('click', () => { hotPage = (hotPage+1) % Math.ceil(hotData[currentPeriod].length / PAGE_SIZE); renderHotPage(); });
+  document.getElementById('hotRefreshBtn').addEventListener('click', () => { const b=document.getElementById('hotRefreshBtn'); b.classList.add('spinning'); hotPage=0; renderHotPage(); setTimeout(()=>b.classList.remove('spinning'),600); });
+  document.getElementById('nextPagerBtn').addEventListener('click', () => { nextPage = (nextPage+1) % Math.ceil(nextData.length / PAGE_SIZE); renderNextPage(); });
+  document.getElementById('nextRefreshBtn').addEventListener('click', () => { const b=document.getElementById('nextRefreshBtn'); b.classList.add('spinning'); nextPage=0; renderNextPage(); setTimeout(()=>b.classList.remove('spinning'),600); });
+
+  document.querySelectorAll('.period-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentPeriod = tab.dataset.period;
+      hotPage = 0;
+      renderAll();
+    });
+  });
+
+  function activateSection(section) {
+    document.querySelectorAll('.left-nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelector(`.left-nav-item[data-section="${section}"]`)?.classList.add('active');
+    document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.cat-tab[data-section="${section}"]`)?.classList.add('active');
+    if (section === 'all') { window.scrollTo({top:0,behavior:'smooth'}); }
+    else { const el=document.getElementById('section-'+section); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+  }
+  document.querySelectorAll('.left-nav-item').forEach(item => { item.addEventListener('click', e => { e.preventDefault(); activateSection(item.dataset.section); }); });
+  document.querySelectorAll('.cat-tab').forEach(tab => { tab.addEventListener('click', e => { e.preventDefault(); activateSection(tab.dataset.section); }); });
+
+  const quotes = [
+    { text: '"주식시장은 인내심 없는 자의 돈을 인내심 있는 자에게 옮긴다"', author: '워런 버핏', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80&fit=crop' },
+    { text: '"남들이 탐욕스러울 때 두려워하고, 남들이 두려워할 때 탐욕스러워라"', author: '워런 버핏', img: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=800&q=80&fit=crop' },
+    { text: '"시장은 단기적으로 투표 기계이지만, 장기적으로는 저울이다"', author: '벤저민 그레이엄', img: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80&fit=crop' },
+    { text: '"투자에서 가장 위험한 네 단어는 이번에는 다르다이다"', author: '존 템플턴', img: 'https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=800&q=80&fit=crop' },
+    { text: '"최고의 투자는 자기 자신에 대한 투자다"', author: '워런 버핏', img: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&q=80&fit=crop' },
+    { text: '"대중을 따라가면 대중의 수익밖에 얻지 못한다"', author: '앙드레 코스톨라니', img: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&q=80&fit=crop' },
+    { text: '"10년간 보유할 주식이 아니면 10분도 보유하지 마라"', author: '워런 버핏', img: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80&fit=crop' },
+    { text: '"돈을 잃는 것보다 더 나쁜 것은 기회를 잃는 것이다"', author: '피터 린치', img: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80&fit=crop' },
+    { text: '"시장은 당신이 버틸 수 있는 것보다 더 오래 비이성적일 수 있다"', author: '존 메이너드 케인스', img: 'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=800&q=80&fit=crop' },
+    { text: '"좋은 기업을 적정한 가격에 사는 것이 적정한 기업을 좋은 가격에 사는 것보다 낫다"', author: '워런 버핏', img: 'https://images.unsplash.com/photo-1486728297118-82a07bc48a28?w=800&q=80&fit=crop' },
+  ];
+  let currentQuote = Math.floor(Math.random() * quotes.length);
+  const banner = document.getElementById('quoteBanner');
+  function applyQuote() {
+    const q = quotes[currentQuote];
+    document.getElementById('quoteText').textContent = q.text;
+    document.getElementById('quoteAuthor').textContent = '— ' + q.author;
+    banner.style.backgroundImage = `linear-gradient(rgba(30,20,60,0.55), rgba(30,20,60,0.55)), url(${q.img})`;
+    banner.style.backgroundSize = 'cover';
+    banner.style.backgroundPosition = 'center';
+  }
+  function rotateQuote() {
+    banner.style.opacity = '0';
+    setTimeout(() => { currentQuote = (currentQuote+1) % quotes.length; applyQuote(); banner.style.opacity = '1'; }, 400);
+  }
+  applyQuote();
+  setInterval(rotateQuote, 30000);
+  renderAll();
+</script>
+</body>
+</html>
